@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP Shortcodes Finder
 Description: A plugin to find and display all shortcodes used in posts and pages, including their status, in a WordPress-styled table.
-Version: 1.5
+Version: 1.7
 Author: Shubham Ralli
 */
 
@@ -35,17 +35,16 @@ function sf_display_admin_page() {
         <h1>WP Shortcodes Finder</h1>
         <form id="sf_shortcode_form" method="POST" action="">
             <?php sf_display_shortcode_options(); ?>
+            <?php sf_display_post_type_options(); ?>
             <input type="submit" name="sf_find_shortcode" class="button button-primary" value="Find Shortcode">
         </form>
-        <!-- Loading spinner (hidden by default) -->
         <div id="sf_loading" style="display: none;">
-            <p>Loading...</p> <!-- You can replace this with a spinner image if preferred -->
+            <p>Loading...</p>
         </div>
-        <div id="sf_results"></div> <!-- Container to display results -->
+        <div id="sf_results"></div>
     </div>
     <?php
 }
-
 
 // Display available shortcodes in a dropdown
 function sf_display_shortcode_options() {
@@ -62,23 +61,50 @@ function sf_display_shortcode_options() {
     echo '</select>';
 }
 
+// Display available post types in a dropdown
+function sf_display_post_type_options() {
+    echo '<label for="sf_post_type">Select Post Type:</label>';
+    echo '<select name="sf_post_type" id="sf_post_type">';
+    echo '<option value="">-- All Post Types --</option>';
+
+    // List all public post types
+    $post_types = get_post_types(array('public' => true), 'objects');
+    foreach ($post_types as $post_type) {
+        echo '<option value="' . esc_attr($post_type->name) . '">' . esc_html($post_type->label) . '</option>';
+    }
+    echo '</select>';
+}
+
 // Handle AJAX request to get shortcode usage
 function sf_ajax_shortcode_usage() {
+    // Check for required parameters
     if ( !isset($_POST['shortcode']) || empty($_POST['shortcode']) ) {
         wp_send_json_error('No shortcode provided.');
         return;
     }
 
     $shortcode = sanitize_text_field( $_POST['shortcode'] );
+    $post_type = isset($_POST['posttype']) ? sanitize_text_field( $_POST['posttype'] ) : '';
+
     global $wpdb;
 
-    // Query to get all posts and pages
+    // Log received shortcode and post_type for debugging
+    error_log("Received shortcode: $shortcode");
+    error_log("Received post_type: $post_type");
+
+    // Base query with dynamic post type filter
     $query = "
         SELECT ID, post_title, post_content, post_type, post_status
         FROM {$wpdb->posts}
-        WHERE post_status IN ('publish', 'draft', 'private', 'trash') 
-        AND (post_type = 'post' OR post_type = 'page')
+        WHERE post_status IN ('publish', 'draft', 'private', 'trash')
     ";
+
+    // Add post type filter if specified
+    if ( !empty($post_type) ) {
+        $query .= $wpdb->prepare(" AND post_type = %s", $post_type);
+    }
+
+    // Fetch results
     $results = $wpdb->get_results( $query );
 
     ob_start(); // Start output buffering
@@ -87,40 +113,22 @@ function sf_ajax_shortcode_usage() {
 
     if ( !empty( $results ) ) {
         echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead>';
-        echo '<tr>';
-        echo '<th scope="col">Type</th>';
-        echo '<th scope="col">Title</th>';
-        echo '<th scope="col">Shortcode Usage</th>';
-        echo '<th scope="col">Status</th>';
-        echo '<th scope="col">Actions</th>'; // New column for actions
-        echo '</tr>';
-        echo '</thead>';
+        echo '<thead><tr><th>Type</th><th>Title</th><th>Shortcode Usage</th><th>Status</th><th>Actions</th></tr></thead>';
         echo '<tbody>';
 
         foreach ( $results as $post ) {
+            // Only include posts containing the selected shortcode
             if ( has_shortcode( $post->post_content, $shortcode ) ) {
-                // Set post type label
-                $post_type_label = ($post->post_type === 'post') ? 'Post' : 'Page';
+                $post_type_label = ucfirst( $post->post_type );
 
-                // Set post status label
-                switch ( $post->post_status ) {
-                    case 'publish':
-                        $status_label = 'Published';
-                        break;
-                    case 'draft':
-                        $status_label = 'Draft';
-                        break;
-                    case 'private':
-                        $status_label = 'Private';
-                        break;
-                    case 'trash':
-                        $status_label = 'Trash';
-                        break;
-                    default:
-                        $status_label = ucfirst( $post->post_status );
-                        break;
-                }
+                // Map post status to readable label
+                $status_label = match ($post->post_status) {
+                    'publish' => 'Published',
+                    'draft' => 'Draft',
+                    'private' => 'Private',
+                    'trash' => 'Trash',
+                    default => ucfirst( $post->post_status ),
+                };
 
                 echo '<tr>';
                 echo '<td>' . esc_html( $post_type_label ) . '</td>';
@@ -132,15 +140,15 @@ function sf_ajax_shortcode_usage() {
             }
         }
 
-        echo '</tbody>';
-        echo '</table>';
+        echo '</tbody></table>';
     } else {
         echo '<p>No posts or pages found with this shortcode.</p>';
     }
 
-    $output = ob_get_clean(); // Get buffered content
-    wp_send_json_success($output); // Send the response back to the AJAX call
+    $output = ob_get_clean();
+    wp_send_json_success($output);
 }
+
 
 // Extract the actual shortcode usage from post content
 function sf_extract_shortcode_data( $shortcode, $content ) {
