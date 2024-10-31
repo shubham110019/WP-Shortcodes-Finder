@@ -1,13 +1,14 @@
 # WP Shortcodes Finder
 
 ## Description
-WP Shortcodes Finder is a WordPress plugin designed to help you locate and manage shortcodes used across your posts and pages. It displays a list of all posts and pages that contain a specific shortcode, along with their statuses, making it easier to manage your content.
+The **WP Shortcodes Finder** is a WordPress plugin designed to help users easily find and manage shortcodes across their posts and pages. This tool allows you to search for specific shortcodes, filter by post type, and now also filter by post status (Published, Draft, Private, Trash).
 
 ## Features
-- **Find Shortcodes**: Search for any registered shortcode and view where it's used.
-- **Post Type Filtering**: Filter results by post type (e.g., posts, pages, custom post types).
-- **Status Overview**: See the status of each post (published, draft, private, trash).
-- **Usage Count**: Quickly find out how many times a shortcode is used across your posts.
+- Find specific shortcodes used in your posts and pages.
+- Filter results by post type (e.g., Post, Page, Custom Post Types).
+- Filter results by post status (All, Published, Draft, Private, Trash).
+- View shortcode usage details and navigate to the corresponding posts/pages.
+- Quickly find out how many times a shortcode is used across your posts.
 
 ## Installation
 1. **Download the Plugin**:
