@@ -1,8 +1,13 @@
 jQuery(document).ready(function($) {
     $('#sf_shortcode_form').on('submit', function(e) {
-        e.preventDefault(); // Prevent the default form submission
+        e.preventDefault(); // Prevent default form submission
 
         var shortcode = $('#sf_shortcode').val(); // Get selected shortcode
+        var posttype = $('#sf_post_type').val(); // Get selected post type
+
+        // Console log to debug postType
+        console.log("Selected Shortcode:", shortcode);
+        console.log("Selected Post Type:", posttype);
 
         // Show loading spinner
         $('#sf_loading').show();
@@ -13,21 +18,19 @@ jQuery(document).ready(function($) {
             url: sf_ajax_object.ajax_url,
             data: {
                 action: 'sf_get_shortcode_usage',
-                shortcode: shortcode
+                shortcode: shortcode,
+                posttype: posttype // Ensure the selected post type is sent
             },
             success: function(response) {
-                // Hide loading spinner
-                $('#sf_loading').hide();
+                $('#sf_loading').hide(); // Hide loading spinner
 
-                // Display results
                 if (response.success) {
-                    $('#sf_results').html(response.data); // Update the results container
+                    $('#sf_results').html(response.data); // Display results
                 } else {
                     $('#sf_results').html('<p>' + response.data + '</p>'); // Display error message
                 }
             },
             error: function() {
-                // Hide loading spinner and show error message
                 $('#sf_loading').hide();
                 $('#sf_results').html('<p>An error occurred. Please try again.</p>');
             }
