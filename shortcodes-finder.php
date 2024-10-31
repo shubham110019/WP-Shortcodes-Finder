@@ -2,8 +2,9 @@
 /*
 Plugin Name: WP Shortcodes Finder
 Description: A plugin to find and display all shortcodes used in posts and pages, including their status, in a WordPress-styled table.
-Version: 1.7
+Version: 0.1
 Author: Shubham Ralli
+Author URI: https://imgtype.com/
 */
 
 // Exit if accessed directly
@@ -13,6 +14,9 @@ if ( !defined( 'ABSPATH' ) ) exit;
 function sf_enqueue_scripts() {
     wp_enqueue_script( 'sf-ajax-script', plugin_dir_url( __FILE__ ) . 'ajax-script.js', array('jquery'), null, true );
     wp_localize_script( 'sf-ajax-script', 'sf_ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+
+     // Enqueue admin styles
+     wp_enqueue_style( 'wp-shortcodes-finder', plugin_dir_url( __FILE__ ) . '/css/wp-shortcodes-finder.css' );
 }
 add_action( 'admin_enqueue_scripts', 'sf_enqueue_scripts' );
 
@@ -28,21 +32,40 @@ function sf_add_admin_menu() {
 }
 add_action( 'admin_menu', 'sf_add_admin_menu' );
 
+
+
+// Add "Settings" and "Deactivate" links on the Plugins page
+function sf_plugin_action_links( $links ) {
+    $settings_link = '<a href="' . admin_url( 'tools.php?page=wp-shortcodes-finder' ) . '">Settings</a>';
+    array_unshift( $links, $settings_link );
+    return $links;
+}
+add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), 'sf_plugin_action_links' );
+
 // Display the admin page content
 function sf_display_admin_page() {
     ?>
-    <div class="wrap">
-        <h1>WP Shortcodes Finder</h1>
-        <form id="sf_shortcode_form" method="POST" action="">
+
+<div class="wp_shorcode_top_header">
+<h1>WP Shortcodes Finder</h1>
+</div>
+
+     <div class="wrap">
+       
+        <div class="wp_shorcode_form">
+        <form id="sf_shortcode_form" method="POST" action="" class="sf-form">
             <?php sf_display_shortcode_options(); ?>
             <?php sf_display_post_type_options(); ?>
-            <?php sf_display_post_status_options(); ?> <!-- Add this line -->
-            <input type="submit" name="sf_find_shortcode" class="button button-primary" value="Find Shortcode">
+            <?php sf_display_post_status_options(); ?>
+            <input type="submit" name="sf_find_shortcode" class="wp_shorcode_btn" value="Find Shortcode">
         </form>
-        <div id="sf_loading" style="display: none;">
-            <p>Loading...</p>
-        </div>
-        <div id="sf_results"></div>
+      
+
+</div>
+
+<div id="sf_loading" class="wp_shortcode_loading" style="display: none;"></div>
+
+        <div id="sf_results" class="wp_shortcode_sf-results"></div>
     </div>
     <?php
 }
@@ -57,18 +80,21 @@ function sf_display_post_status_options() {
         'trash' => 'Trash',
     );
 
+    echo '<div class="wp_shortcode_form-group">';
     echo '<label for="sf_post_status">Select Post Status:</label>';
     echo '<select name="sf_post_status" id="sf_post_status">';
     foreach ($post_statuses as $value => $label) {
         echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
     }
     echo '</select>';
+    echo '</div>';
 }
 
 // Display available shortcodes in a dropdown
 function sf_display_shortcode_options() {
     global $shortcode_tags;
 
+    echo '<div class="wp_shortcode_form-group">';
     echo '<label for="sf_shortcode">Select a Shortcode:</label>';
     echo '<select name="sf_shortcode" id="sf_shortcode" required>';
     echo '<option value="">-- Select Shortcode --</option>';
@@ -78,10 +104,12 @@ function sf_display_shortcode_options() {
         echo '<option value="' . esc_attr( $tag ) . '">' . esc_html( $tag ) . '</option>';
     }
     echo '</select>';
+    echo '</div>';
 }
 
 // Display available post types in a dropdown
 function sf_display_post_type_options() {
+    echo '<div class="wp_shortcode_form-group">';
     echo '<label for="sf_post_type">Select Post Type:</label>';
     echo '<select name="sf_post_type" id="sf_post_type">';
     echo '<option value="">-- All Post Types --</option>';
@@ -92,6 +120,7 @@ function sf_display_post_type_options() {
         echo '<option value="' . esc_attr($post_type->name) . '">' . esc_html($post_type->label) . '</option>';
     }
     echo '</select>';
+    echo '</div>';
 }
 
 // Handle AJAX request to get shortcode usage
@@ -136,6 +165,8 @@ function sf_ajax_shortcode_usage() {
 
     ob_start(); // Start output buffering
 
+    echo "<div class='wp_shortcode_resultbox'>";
+
     echo '<h2>Shortcode Usage: [' . esc_html( $shortcode ) . ']</h2>';
 
     $shortcode_count = 0;
@@ -178,6 +209,7 @@ function sf_ajax_shortcode_usage() {
 
     // Display the count of posts found
     echo '<p>Total posts found using the shortcode: <strong>' . esc_html($shortcode_count) . '</strong></p>';
+    echo "<div>";
 
     $output = ob_get_clean();
     wp_send_json_success($output);
