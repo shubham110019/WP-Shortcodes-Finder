@@ -36,6 +36,7 @@ function sf_display_admin_page() {
         <form id="sf_shortcode_form" method="POST" action="">
             <?php sf_display_shortcode_options(); ?>
             <?php sf_display_post_type_options(); ?>
+            <?php sf_display_post_status_options(); ?> <!-- Add this line -->
             <input type="submit" name="sf_find_shortcode" class="button button-primary" value="Find Shortcode">
         </form>
         <div id="sf_loading" style="display: none;">
@@ -44,6 +45,24 @@ function sf_display_admin_page() {
         <div id="sf_results"></div>
     </div>
     <?php
+}
+
+// Display available post status in a dropdown
+function sf_display_post_status_options() {
+    $post_statuses = array(
+        '' => '-- All Statuses --',
+        'publish' => 'Published',
+        'draft' => 'Draft',
+        'private' => 'Private',
+        'trash' => 'Trash',
+    );
+
+    echo '<label for="sf_post_status">Select Post Status:</label>';
+    echo '<select name="sf_post_status" id="sf_post_status">';
+    foreach ($post_statuses as $value => $label) {
+        echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
 }
 
 // Display available shortcodes in a dropdown
@@ -76,6 +95,7 @@ function sf_display_post_type_options() {
 }
 
 // Handle AJAX request to get shortcode usage
+// Handle AJAX request to get shortcode usage
 function sf_ajax_shortcode_usage() {
     // Check for required parameters
     if ( !isset($_POST['shortcode']) || empty($_POST['shortcode']) ) {
@@ -85,14 +105,16 @@ function sf_ajax_shortcode_usage() {
 
     $shortcode = sanitize_text_field( $_POST['shortcode'] );
     $post_type = sanitize_text_field( $_POST['posttype'] );
+    $post_status = sanitize_text_field( $_POST['poststatus'] ); // Get the selected post status
 
     global $wpdb;
 
-    // Log received shortcode and post_type for debugging
+    // Log received shortcode, post_type, and post_status for debugging
     error_log("Received shortcode: $shortcode");
     error_log("Received post_type: $post_type");
+    error_log("Received post_status: $post_status");
 
-    // Base query with dynamic post type filter
+    // Base query with dynamic post type and post status filter
     $query = "
         SELECT ID, post_title, post_content, post_type, post_status
         FROM {$wpdb->posts}
@@ -104,6 +126,11 @@ function sf_ajax_shortcode_usage() {
         $query .= $wpdb->prepare(" AND post_type = %s", $post_type);
     }
 
+    // Add post status filter if specified
+    if ( !empty($post_status) ) {
+        $query .= $wpdb->prepare(" AND post_status = %s", $post_status);
+    }
+
     // Fetch results
     $results = $wpdb->get_results( $query );
 
@@ -111,7 +138,6 @@ function sf_ajax_shortcode_usage() {
 
     echo '<h2>Shortcode Usage: [' . esc_html( $shortcode ) . ']</h2>';
 
-    // Count the number of posts that contain the shortcode
     $shortcode_count = 0;
 
     if ( !empty( $results ) ) {
@@ -122,7 +148,8 @@ function sf_ajax_shortcode_usage() {
         foreach ( $results as $post ) {
             // Only include posts containing the selected shortcode
             if ( has_shortcode( $post->post_content, $shortcode ) ) {
-                $shortcode_count++; // Increment count
+
+                $shortcode_count++;
                 $post_type_label = ucfirst( $post->post_type );
 
                 // Map post status to readable label
@@ -155,6 +182,7 @@ function sf_ajax_shortcode_usage() {
     $output = ob_get_clean();
     wp_send_json_success($output);
 }
+
 
 // Extract the actual shortcode usage from post content
 function sf_extract_shortcode_data( $shortcode, $content ) {
