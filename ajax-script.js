@@ -4,10 +4,12 @@ jQuery(document).ready(function($) {
 
         var shortcode = $('#sf_shortcode').val(); // Get selected shortcode
         var posttype = $('#sf_post_type').val(); // Get selected post type
+        var poststatus = $('#sf_post_status').val(); // Get selected post status
 
-        // Console log to debug postType
+        // Console log to debug
         console.log("Selected Shortcode:", shortcode);
         console.log("Selected Post Type:", posttype);
+        console.log("Selected Post Status:", poststatus); // Log selected post status
 
         // Show loading spinner
         $('#sf_loading').show();
@@ -19,7 +21,8 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'sf_get_shortcode_usage',
                 shortcode: shortcode,
-                posttype: posttype // Ensure the selected post type is sent
+                posttype: posttype, // Send the selected post type
+                poststatus: poststatus // Send the selected post status
             },
             success: function(response) {
                 $('#sf_loading').hide(); // Hide loading spinner
