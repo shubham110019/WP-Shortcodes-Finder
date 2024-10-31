@@ -60,4 +60,4 @@ Include screenshots to illustrate the tool in action:
 
 ## Author
 **Shubham Ralli**  
-[Your Website](https://imgtype.com/)
+[Website](https://imgtype.com/)
