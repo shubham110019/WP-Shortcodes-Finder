@@ -84,7 +84,7 @@ function sf_ajax_shortcode_usage() {
     }
 
     $shortcode = sanitize_text_field( $_POST['shortcode'] );
-    $post_type = isset($_POST['posttype']) ? sanitize_text_field( $_POST['posttype'] ) : '';
+    $post_type = sanitize_text_field( $_POST['posttype'] );
 
     global $wpdb;
 
@@ -111,6 +111,9 @@ function sf_ajax_shortcode_usage() {
 
     echo '<h2>Shortcode Usage: [' . esc_html( $shortcode ) . ']</h2>';
 
+    // Count the number of posts that contain the shortcode
+    $shortcode_count = 0;
+
     if ( !empty( $results ) ) {
         echo '<table class="wp-list-table widefat fixed striped">';
         echo '<thead><tr><th>Type</th><th>Title</th><th>Shortcode Usage</th><th>Status</th><th>Actions</th></tr></thead>';
@@ -119,6 +122,7 @@ function sf_ajax_shortcode_usage() {
         foreach ( $results as $post ) {
             // Only include posts containing the selected shortcode
             if ( has_shortcode( $post->post_content, $shortcode ) ) {
+                $shortcode_count++; // Increment count
                 $post_type_label = ucfirst( $post->post_type );
 
                 // Map post status to readable label
@@ -145,10 +149,12 @@ function sf_ajax_shortcode_usage() {
         echo '<p>No posts or pages found with this shortcode.</p>';
     }
 
+    // Display the count of posts found
+    echo '<p>Total posts found using the shortcode: <strong>' . esc_html($shortcode_count) . '</strong></p>';
+
     $output = ob_get_clean();
     wp_send_json_success($output);
 }
-
 
 // Extract the actual shortcode usage from post content
 function sf_extract_shortcode_data( $shortcode, $content ) {
