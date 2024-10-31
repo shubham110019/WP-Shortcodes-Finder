@@ -124,17 +124,16 @@ function sf_display_post_type_options() {
 }
 
 // Handle AJAX request to get shortcode usage
-// Handle AJAX request to get shortcode usage
 function sf_ajax_shortcode_usage() {
     // Check for required parameters
-    if ( !isset($_POST['shortcode']) || empty($_POST['shortcode']) ) {
+    if (!isset($_POST['shortcode']) || empty($_POST['shortcode'])) {
         wp_send_json_error('No shortcode provided.');
         return;
     }
 
-    $shortcode = sanitize_text_field( $_POST['shortcode'] );
-    $post_type = sanitize_text_field( $_POST['posttype'] );
-    $post_status = sanitize_text_field( $_POST['poststatus'] ); // Get the selected post status
+    $shortcode = sanitize_text_field($_POST['shortcode']);
+    $post_type = sanitize_text_field($_POST['posttype']);
+    $post_status = sanitize_text_field($_POST['poststatus']); // Get the selected post status
 
     global $wpdb;
 
@@ -151,37 +150,38 @@ function sf_ajax_shortcode_usage() {
     ";
 
     // Add post type filter if specified
-    if ( !empty($post_type) ) {
+    if (!empty($post_type)) {
         $query .= $wpdb->prepare(" AND post_type = %s", $post_type);
     }
 
     // Add post status filter if specified
-    if ( !empty($post_status) ) {
+    if (!empty($post_status)) {
         $query .= $wpdb->prepare(" AND post_status = %s", $post_status);
     }
 
     // Fetch results
-    $results = $wpdb->get_results( $query );
+    $results = $wpdb->get_results($query);
 
     ob_start(); // Start output buffering
 
     echo "<div class='wp_shortcode_resultbox'>";
 
-    echo '<h2>Shortcode Usage: [' . esc_html( $shortcode ) . ']</h2>';
+    echo '<h2>Shortcode Usage: [' . esc_html($shortcode) . ']</h2>';
 
     $shortcode_count = 0;
 
-    if ( !empty( $results ) ) {
+    if (!empty($results)) {
         echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead><tr><th>Type</th><th>Title</th><th>Shortcode Usage</th><th>Status</th><th>Actions</th></tr></thead>';
+        echo '<thead><tr><th>#</th><th>Type</th><th>Title</th><th>Shortcode Usage</th><th>Status</th><th>Actions</th></tr></thead>';
         echo '<tbody>';
 
-        foreach ( $results as $post ) {
-            // Only include posts containing the selected shortcode
-            if ( has_shortcode( $post->post_content, $shortcode ) ) {
+        $index = 1; // Initialize the counter for the index number
 
+        foreach ($results as $post) {
+            // Only include posts containing the selected shortcode
+            if (has_shortcode($post->post_content, $shortcode)) {
                 $shortcode_count++;
-                $post_type_label = ucfirst( $post->post_type );
+                $post_type_label = ucfirst($post->post_type);
 
                 // Map post status to readable label
                 $status_label = match ($post->post_status) {
@@ -189,16 +189,19 @@ function sf_ajax_shortcode_usage() {
                     'draft' => 'Draft',
                     'private' => 'Private',
                     'trash' => 'Trash',
-                    default => ucfirst( $post->post_status ),
+                    default => ucfirst($post->post_status),
                 };
 
                 echo '<tr>';
-                echo '<td>' . esc_html( $post_type_label ) . '</td>';
-                echo '<td><a href="' . get_permalink( $post->ID ) . '" target="_blank">' . esc_html( $post->post_title ) . '</a></td>';
-                echo '<td>' . sf_extract_shortcode_data( $shortcode, $post->post_content ) . '</td>';
-                echo '<td>' . esc_html( $status_label ) . '</td>';
-                echo '<td><a href="' . get_permalink( $post->ID ) . '" target="_blank" class="button">View</a></td>';
+                echo '<td>' . $index . '</td>'; // Add the index number
+                echo '<td>' . esc_html($post_type_label) . '</td>';
+                echo '<td><a href="' . get_permalink($post->ID) . '" target="_blank">' . esc_html($post->post_title) . '</a></td>';
+                echo '<td>' . sf_extract_shortcode_data($shortcode, $post->post_content) . '</td>';
+                echo '<td>' . esc_html($status_label) . '</td>';
+                echo '<td><a href="' . get_permalink($post->ID) . '" target="_blank" class="button">View</a></td>';
                 echo '</tr>';
+
+                $index++; // Increment the index for each row
             }
         }
 
@@ -214,7 +217,6 @@ function sf_ajax_shortcode_usage() {
     $output = ob_get_clean();
     wp_send_json_success($output);
 }
-
 
 // Extract the actual shortcode usage from post content
 function sf_extract_shortcode_data( $shortcode, $content ) {
