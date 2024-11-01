@@ -5,7 +5,6 @@ jQuery(document).ready(function($) {
         var shortcode = $('#sf_shortcode').val(); // Get selected shortcode
         var posttype = $('#sf_post_type').val(); // Get selected post type
         var poststatus = $('#sf_post_status').val(); // Get selected post status
-        
         // Show loading spinner
         $('#sf_loading').show();
         $('#sf_results').html(''); // Clear previous results
